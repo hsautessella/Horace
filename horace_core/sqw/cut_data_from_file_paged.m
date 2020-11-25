@@ -1,6 +1,6 @@
 function sqw_obj = ...
     cut_data_from_file_paged( ...
-        file_path, ...
+        source, ...
         proj, ...
         u_axis_lims, ...
         v_axis_lims, ...
@@ -12,7 +12,11 @@ function sqw_obj = ...
 %
 
 %% Start: cut -----------------------------------------------------------------
-sqw_obj = get_sqw_obj(file_path);
+if is_string(source)
+    sqw_obj = get_sqw_obj(source);
+else
+    sqw_obj = source;
+end
 
 %% Start: cut_sqw_main --------------------------------------------------------
 
@@ -32,8 +36,6 @@ sqw_obj = get_sqw_obj(file_path);
 if ~ok
     error ('CUT_SQW:invalid_arguments', mess)
 end
-
-%% Continue: cut_sqw_main -----------------------------------------------------
 
 % Process projection
 [proj, pbin, num_dims, pin, en] = update_projection_bins(proj, sqw_obj, pbin);
@@ -80,23 +82,26 @@ if isempty(bin_starts)
     return
 end
 
+block_size = sqw_obj.data.pix.base_page_size;
 % Get pixels that will likely contribute to the cut
 pix_indices = get_values_in_ranges(bin_starts, bin_ends);
-cut_pix_data = sqw_obj.data.pix.get_pixels(pix_indices);
 
+cut_pix_data = PixelData();
+for block_start = 1:block_size:numel(pix_indices)
+    block_end = min(block_start + block_size - 1, numel(pix_indices));
+    cut_pix_data.append(sqw_obj.data.pix.get_pixels(pix_indices(block_start:block_end)));
 
-%% Start: cut_data_from_file_job.accumulate_cut -------------------------------
+    %% Start: cut_data_from_file_job.accumulate_cut -------------------------------
 
-keep_pix = true;
+    keep_pix = true;
 
-accum_output = cell(1, 7);
-if proj.can_mex_cut && get(hor_config, 'use_mex')
+    % if proj.can_mex_cut && get(hor_config, 'use_mex')
     [ ...
         s, ...
         e, ...
         npix, ...
         urange_step_pix, ...
-        npix_retain, ...
+        del_npix_retain, ...
         ok, ...
         ix ...
     ] = cut_data_from_file_job.accumulate_cut( ...
@@ -105,25 +110,26 @@ if proj.can_mex_cut && get(hor_config, 'use_mex')
             npix, ...
             urange_step_pix, ...
             keep_pix, ...
-            cut_pix_data, ...
+            PixelData(cut_pix_data.data), ...
             proj, ...
             targ_pax ...
-        );
-else
-    error('Harry''s error');
-end
+    );
 
-%% End: cut_data_from_file_job.accumulate_cut ---------------------------------
+    npix_sum = sum(npix(:))
+
+    %% End: cut_data_from_file_job.accumulate_cut ---------------------------------
 
 
-%% Continue: cut_data_from_array ----------------------------------------------
+    %% Continue: cut_data_from_array ----------------------------------------------
 
-if keep_pix
-    cut_pix_data = cut_pix_data.get_pixels(ok);
-    cut_pix_data = sort_pix(cut_pix_data, ix, npix);
-else
-    cut_pix_data = PixelData();
-end
+    if keep_pix
+        cut_pix_data = cut_pix_data.get_pixels(ok);
+        cut_pix_data = sort_pix(cut_pix_data, ix, npix);
+    else
+        cut_pix_data = PixelData();
+    end
+
+end  % loop over pixel blocks
 
 %% End: cut_data_from_array ---------------------------------------------------
 
