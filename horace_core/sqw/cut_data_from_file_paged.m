@@ -89,9 +89,18 @@ pix_indices = get_values_in_ranges(bin_starts, bin_ends);
 i = 1;
 pix_retained = {};
 pix_ix_retained = {};
+
+
 for block_start = 1:block_size:numel(pix_indices)
+% for bin_num = 1:numel(bin_starts)
+    % bin_start = bin_starts(bin_num);
+    % bin_end = bin_ends(bin_num);
+    disp(['Iter ', num2str(i)]);
+
     block_end = min(block_start + block_size - 1, numel(pix_indices));
     candidate_pix = sqw_obj.data.pix.get_pixels(pix_indices(block_start:block_end));
+
+    % candidate_pix = sqw_obj.data.pix.get_pixels_in_range(bin_start, bin_end);
 
     keep_pix = true;
 
@@ -125,6 +134,8 @@ for block_start = 1:block_size:numel(pix_indices)
     else
         cut_pix_data = PixelData();
     end
+
+    disp('')
 
 end  % loop over pixel blocks
 
@@ -234,12 +245,12 @@ end
 
 
 function out = get_values_in_ranges(range_starts, range_ends)
-    % Get an array containing the values of between the given ranges
+    % Get an array containing the values between the given ranges
     % e.g.
     %   >> range_starts = [1, 15, 12]
     %   >> range_ends = [4, 17, 14]
     %   >> get_values_in_range(range_starts, range_ends)
-    %       ans = [1, 2, 3, 4, 15, 16, 17, 9, 12, 13, 14]
+    %       ans = [1, 2, 3, 4, 15, 16, 17, 12, 13, 14]
 
     % Find the indexes of the boundaries of each range
     range_bounds_idxs = cumsum([1; range_ends(:) - range_starts(:) + 1]);

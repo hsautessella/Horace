@@ -63,10 +63,10 @@ methods
             file_path, proj, u_axis_lims, v_axis_lims, w_axis_lims, en_axis_lims);
         toc;
 
-        tic;
-        sqw_cut = cut_sqw(...
-            file_path, proj, u_axis_lims, v_axis_lims, w_axis_lims, en_axis_lims);
-        toc;
+        % tic;
+        % sqw_cut = cut_sqw(...
+        %     file_path, proj, u_axis_lims, v_axis_lims, w_axis_lims, en_axis_lims);
+        % toc;
 
         ref_sqw = sqw('ref_large.sqw');
         assertEqualToTol(sqw_cut, ref_sqw, [0, 1e-4], 'ignore_str', true);
